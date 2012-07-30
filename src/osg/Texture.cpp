@@ -2339,6 +2339,14 @@ void Texture::applyTexImage2D_subload(State& state, GLenum target, const Image* 
 
 bool Texture::isHardwareMipmapGenerationEnabled(const State& state) const
 {
+#ifdef __APPLE__
+      // disable hardware mipmapping for avoiding crash on many nVidia and GMA950 drivers on Mac
+      if (strncmp((const char *)glGetString(GL_RENDERER), "NVIDIA", 6) == 0 && 
+          strncmp((const char *)glGetString(GL_RENDERER), "NVIDIA NV34MAP", 13) != 0) {
+        osg::notify(osg::DEBUG_INFO) << "Hardware mipmapping is disabled due to NVIDIA driver bug" << std::endl;
+        return false;
+      }
+#endif
     if (_useHardwareMipMapGeneration)
     {
         unsigned int contextID = state.getContextID();
