@@ -49,6 +49,11 @@ if(COMMAND cmake_policy)
 
 endif()
 
+#### Flightgear change ######
+# set this before project()
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
+#### Flightgear change ######
+
 PROJECT(OpenSceneGraph)
 
 SET(OPENSCENEGRAPH_MAJOR_VERSION 3)
@@ -837,9 +842,13 @@ ELSEIF(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
         IF (APPLE)
             # set standard lib, clang defaults to c++0x
-            set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++98")
-            set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libstdc++")
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++98 -stdlib=libstdc++ -Wno-overloaded-virtual -Wno-conversion")
+            #set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++98")
+
+            #### Flightgear change ######
+            set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-overloaded-virtual -Wno-conversion")
+            #### Flightgear change ######
+
             set(WARNING_CFLAGS "")
         ENDIF()
 ENDIF()
