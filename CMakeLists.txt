@@ -848,11 +848,10 @@ ELSEIF(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         # remain unset.
 
         IF (APPLE)
-            # set standard lib, clang defaults to c++0x
-            #set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++98")
-
             #### Flightgear change ######
             set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
+            set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-overloaded-virtual -Wno-conversion")
             #### Flightgear change ######
 
