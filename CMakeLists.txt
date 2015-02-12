@@ -647,7 +647,11 @@ IF(ANDROID)
     ANDROID_3RD_PARTY()
 ELSE()
 # Common to all platforms except android:
-    FIND_PACKAGE(Freetype)
+
+    #### FlightGear change - make FreeType required
+    FIND_PACKAGE(Freetype REQUIRED)
+    ######
+
     FIND_PACKAGE(Inventor)
     FIND_PACKAGE(Jasper)
     FIND_PACKAGE(OpenEXR)
