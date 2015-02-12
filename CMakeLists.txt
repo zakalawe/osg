@@ -52,6 +52,9 @@ endif()
 #### Flightgear change ######
 # set this before project()
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
+set(CMAKE_SHARED_MODULE_SUFFIX ".dylib")
+set(CMAKE_SHARED_MODULE_SUFFIX_CXX ".dylib")
+
 #### Flightgear change ######
 
 PROJECT(OpenSceneGraph)
@@ -67,7 +70,11 @@ SET(OPENSCENEGRAPH_RELEASE_CANDIDATE 0)
 
 SET(OPENSCENEGRAPH_VERSION ${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINOR_VERSION}.${OPENSCENEGRAPH_PATCH_VERSION})
 
-SET(OSG_PLUGINS osgPlugins-${OPENSCENEGRAPH_VERSION})
+#### FlightGear change - remove the version suffix from OSG_PLUGINS, since
+# codesigning cannot tolerate periods in subris of Contents/PlugIns
+#SET(OSG_PLUGINS osgPlugins-${OPENSCENEGRAPH_VERSION})
+SET(OSG_PLUGINS osgPlugins)
+######################################################################
 
 SET(OSG_PLUGIN_PREFIX "")
 
