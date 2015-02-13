@@ -52,9 +52,6 @@ endif()
 #### Flightgear change ######
 # set this before project()
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
-set(CMAKE_SHARED_MODULE_SUFFIX ".dylib")
-set(CMAKE_SHARED_MODULE_SUFFIX_CXX ".dylib")
-
 #### Flightgear change ######
 
 PROJECT(OpenSceneGraph)
@@ -74,6 +71,11 @@ SET(OPENSCENEGRAPH_VERSION ${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINO
 # codesigning cannot tolerate periods in subris of Contents/PlugIns
 #SET(OSG_PLUGINS osgPlugins-${OPENSCENEGRAPH_VERSION})
 SET(OSG_PLUGINS osgPlugins)
+
+# codesigning doesn't like '.so' suffix
+set(CMAKE_SHARED_MODULE_SUFFIX ".dylib")
+set(CMAKE_SHARED_MODULE_SUFFIX_CXX ".dylib")
+
 ######################################################################
 
 SET(OSG_PLUGIN_PREFIX "")
