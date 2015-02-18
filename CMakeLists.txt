@@ -49,11 +49,6 @@ if(COMMAND cmake_policy)
 
 endif()
 
-#### Flightgear change ######
-# set this before project()
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
-#### Flightgear change ######
-
 PROJECT(OpenSceneGraph)
 
 SET(OPENSCENEGRAPH_MAJOR_VERSION 3)
@@ -75,6 +70,8 @@ SET(OSG_PLUGINS osgPlugins)
 # codesigning doesn't like '.so' suffix
 set(CMAKE_SHARED_MODULE_SUFFIX ".dylib")
 set(CMAKE_SHARED_MODULE_SUFFIX_CXX ".dylib")
+
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
 
 ######################################################################
 
@@ -965,7 +962,12 @@ IF(APPLE AND NOT ANDROID)
                 SET(OSG_DEFAULT_IMAGE_PLUGIN_FOR_OSX "imageio" CACHE STRING "Forced imageio default image plugin for OSX" FORCE)
                 # 64 Bit Works, i386,ppc is not supported any more
                 SET(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architectures for OSX" FORCE)
-                SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.8 -fvisibility-inlines-hidden" CACHE STRING "Flags used by the compiler during all build types." FORCE)
+
+                #### FlightGear change - don't explicity set -mmacosx-version-min here, we want to use the value defined by
+                # CMAKE_OSX_DEPLOYMENT_TARGET above
+
+                SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility-inlines-hidden" CACHE STRING "Flags used by the compiler during all build types." FORCE)
+                ###########################################################
             ELSEIF(${OSG_OSX_SDK_NAME} STREQUAL "macosx10.7")
                 SET(OSG_DEFAULT_IMAGE_PLUGIN_FOR_OSX "imageio" CACHE STRING "Forced imageio default image plugin for OSX" FORCE)
                 # 64 Bit Works, PPC is not supported any more
