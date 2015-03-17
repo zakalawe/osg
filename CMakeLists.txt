@@ -71,7 +71,7 @@ SET(OSG_PLUGINS osgPlugins)
 set(CMAKE_SHARED_MODULE_SUFFIX ".dylib")
 set(CMAKE_SHARED_MODULE_SUFFIX_CXX ".dylib")
 
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.7")
 
 ######################################################################
 
