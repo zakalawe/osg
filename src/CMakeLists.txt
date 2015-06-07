@@ -15,18 +15,18 @@ FOREACH( mylibfolder
         osgGA 
         osgText 
         osgViewer
-        osgAnimation 
+    #    osgAnimation 
         osgFX
-        osgManipulator
+    #    osgManipulator
         osgParticle
-        osgPresentation
-        osgShadow
+   #     osgPresentation
+   #     osgShadow
         osgSim
-        osgTerrain
+    #    osgTerrain
         osgWidget
-        osgVolume
-        osgWrappers/serializers
-        osgWrappers/deprecated-dotosg
+     #   osgVolume
+    #    osgWrappers/serializers
+     #   osgWrappers/deprecated-dotosg
         osgPlugins
     )
 
