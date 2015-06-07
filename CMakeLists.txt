@@ -47,6 +47,10 @@ if(COMMAND cmake_policy)
     # or even easier (available in cmake-2.6)
     #if(POLICY CMPxyzw)
 
+	# set MACOSX_RPATH by default
+   if(POLICY CMP0042)
+       cmake_policy(SET CMP0042 NEW)
+   endif()
 endif()
 
 PROJECT(OpenSceneGraph)
@@ -969,6 +973,8 @@ IF(APPLE AND NOT ANDROID)
                 SET(OSG_DEFAULT_IMAGE_PLUGIN_FOR_OSX "imageio" CACHE STRING "Forced imageio default image plugin for OSX" FORCE)
                 # 64 Bit Works, i386,ppc is not supported any more
                 SET(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architectures for OSX" FORCE)
+
+				set(CMAKE_OSX_RPATH 1)
 
                 #### FlightGear change - don't explicity set -mmacosx-version-min here, we want to use the value defined by
                 # CMAKE_OSX_DEPLOYMENT_TARGET above
