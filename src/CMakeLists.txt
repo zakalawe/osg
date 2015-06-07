@@ -15,19 +15,19 @@ FOREACH( mylibfolder
         osgGA
         osgText
         osgViewer
-        osgAnimation
+    #    osgAnimation
         osgFX
-        osgManipulator
+    #    osgManipulator
         osgParticle
-        osgPresentation
-        osgShadow
+   #     osgPresentation
+   #     osgShadow
         osgSim
-        osgTerrain
-        osgWidget
-        osgUI
-        osgVolume
-        osgWrappers/serializers
-        osgWrappers/deprecated-dotosg
+    #    osgTerrain
+#        osgWidget
+#        osgUI
+     #   osgVolume
+    #    osgWrappers/serializers
+     #   osgWrappers/deprecated-dotosg
         osgPlugins
     )
 
@@ -36,7 +36,5 @@ FOREACH( mylibfolder
 ENDFOREACH()
 
 IF ((QT4_FOUND OR Qt5Widgets_FOUND) AND NOT ANDROID)
-    ADD_SUBDIRECTORY(osgQt)
+#    ADD_SUBDIRECTORY(osgQt)
 ENDIF()
-
-
