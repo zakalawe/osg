@@ -760,7 +760,14 @@ std::string Registry::createLibraryNameForExtension(const std::string& ext)
     ExtensionAliasMap::iterator itr=_extAliasMap.find(lowercase_ext);
     if (itr!=_extAliasMap.end() && ext != itr->second) return createLibraryNameForExtension(itr->second);
 
+    // begin FlightGear mod - code-signing can't tolerate directory names with periods in them,
+    // inside Contents/Plugins
+    // see https://developer.apple.com/library/mac/technotes/tn2206
+#if 0
     std::string prepend = std::string("osgPlugins-")+std::string(osgGetVersion())+std::string("/");
+#else
+    std::string prepend = std::string("osgPlugins/");
+#endif
 
 #if defined(__CYGWIN__)
     return prepend+"cygwin_"+"osgdb_"+lowercase_ext+OSG_LIBRARY_POSTFIX_WITH_QUOTES+".dll";
