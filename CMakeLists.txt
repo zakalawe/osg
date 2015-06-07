@@ -33,6 +33,10 @@ if(COMMAND cmake_policy)
     # or even easier (available in cmake-2.6)
     #if(POLICY CMPxyzw)
 
+	# set MACOSX_RPATH by default
+   if(POLICY CMP0042)
+       cmake_policy(SET CMP0042 NEW)
+   endif()
 endif()
 
 PROJECT(OpenSceneGraph)
@@ -48,7 +52,25 @@ SET(OPENSCENEGRAPH_RELEASE_CANDIDATE 0)
 
 SET(OPENSCENEGRAPH_VERSION ${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINOR_VERSION}.${OPENSCENEGRAPH_PATCH_VERSION})
 
-SET(OSG_PLUGINS osgPlugins-${OPENSCENEGRAPH_VERSION})
+#### FlightGear change
+IF (APPLE)
+  # remove the version suffix from OSG_PLUGINS, since
+  # codesigning cannot tolerate periods in subdirs of Contents/PlugIns
+  # osgDB Registry code modified to match.
+  #SET(OSG_PLUGINS osgPlugins-${OPENSCENEGRAPH_VERSION})
+  SET(OSG_PLUGINS osgPlugins)
+
+  # codesigning doesn't like '.so' suffix
+  set(CMAKE_SHARED_MODULE_SUFFIX ".dylib")
+  set(CMAKE_SHARED_MODULE_SUFFIX_CXX ".dylib")
+
+  # our deployment target is 10.7 for the moment (consistent with
+  # CmakeLists for SimGear and FlightGear)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
+ELSE()
+  SET(OSG_PLUGINS osgPlugins-${OPENSCENEGRAPH_VERSION})
+ENDIF()
+######################################################################
 
 SET(OSG_PLUGIN_PREFIX "")
 
@@ -161,7 +183,7 @@ IF(APPLE)
     STRING(REPLACE "." ";" MACOS_VERSION_LIST ${OSG_OSX_SDK_NAME})
     LIST(GET MACOS_VERSION_LIST 0 MACOS_VERSION_MAJOR)
     LIST(GET MACOS_VERSION_LIST 1 MACOS_VERSION_MINOR)
-    LIST(GET MACOS_VERSION_LIST 2 MACOS_VERSION_PATCH)
+    #LIST(GET MACOS_VERSION_LIST 2 MACOS_VERSION_PATCH)
 
     SET(OSG_OSX_SDK_NAME "macosx${MACOS_VERSION_MAJOR}.${MACOS_VERSION_MINOR}")
 
@@ -1093,11 +1115,20 @@ IF(APPLE AND NOT ANDROID)
         # FORCE is used because the options are not reflected in the UI otherwise.
         # Seems like a good place to add version specific compiler flags too.
         IF(NOT OSG_CONFIG_HAS_BEEN_RUN_BEFORE)
-            IF(${OSG_OSX_SDK_NAME} STREQUAL "macosx10.8" OR ${OSG_OSX_SDK_NAME} STREQUAL "macosx10.9" OR ${OSG_OSX_SDK_NAME} STREQUAL "macosx10.10")
+            ## FlightGear changes #######################################
+            # always use this mode for recent SDKs
+            IF(TRUE)
                 SET(OSG_DEFAULT_IMAGE_PLUGIN_FOR_OSX "imageio" CACHE STRING "Forced imageio default image plugin for OSX" FORCE)
                 # 64 Bit Works, i386,ppc is not supported any more
                 SET(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architectures for OSX" FORCE)
-                SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.8 -fvisibility-inlines-hidden" CACHE STRING "Flags used by the compiler during all build types." FORCE)
+
+                #### FlightGear change - don't explicity set -mmacosx-version-min here, we want to use the value defined by
+                # CMAKE_OSX_DEPLOYMENT_TARGET above
+                SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility-inlines-hidden" CACHE STRING "Flags used by the compiler during all build types." FORCE)
+
+                # set RPATH handling so we don't need install_name_tool during packaging
+				set(CMAKE_OSX_RPATH 1)
+                ###########################################################
             ELSEIF(${OSG_OSX_SDK_NAME} STREQUAL "macosx10.7")
                 SET(OSG_DEFAULT_IMAGE_PLUGIN_FOR_OSX "imageio" CACHE STRING "Forced imageio default image plugin for OSX" FORCE)
                 # 64 Bit Works, PPC is not supported any more
@@ -1330,4 +1361,3 @@ ADD_CUSTOM_TARGET(uninstall
   "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
 
 #
-
