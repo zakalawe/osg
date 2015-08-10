@@ -8,6 +8,10 @@ ENDIF()
 SET(LIB_NAME osgQt)
 SET(HEADER_PATH ${OpenSceneGraph_SOURCE_DIR}/include/${LIB_NAME})
 
+IF ( Qt5Gui_FOUND )
+    set(OSGQT_QT_VERSION 5)
+ENDIF()
+
 SET(OSGQT_VERSION_HEADER "${PROJECT_BINARY_DIR}/include/osgQt/Version")
 CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Version.in" ${OSGQT_VERSION_HEADER})
 
@@ -17,7 +21,6 @@ SET(TARGET_H
     ${HEADER_PATH}/QFontImplementation
     ${OSGQT_VERSION_HEADER}
 )
-
 
 # FIXME: For OS X, need flag for Framework or dylib
 SET(TARGET_SRC
