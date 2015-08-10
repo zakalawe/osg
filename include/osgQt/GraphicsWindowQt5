@@ -125,7 +125,6 @@ protected:
 
     virtual void resizeEvent( QResizeEvent* event );
     virtual void moveEvent( QMoveEvent* event );
-    virtual void glDraw();
     virtual bool event( QEvent* event );
 };
 
