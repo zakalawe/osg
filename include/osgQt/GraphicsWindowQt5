@@ -53,6 +53,7 @@ void OSGQT_EXPORT setViewer( osgViewer::ViewerBase *viewer );
 
 class OSGQT_EXPORT GLWindow : public QWindow
 {
+    Q_OBJECT
     typedef QWindow inherited;
 
 public:
@@ -172,7 +173,8 @@ public:
     virtual bool releaseContextImplementation();
     virtual void swapBuffersImplementation();
     virtual void runOperations();
-
+    virtual bool checkEvents();
+    
     virtual void requestWarpPointer( float x, float y );
 
 protected:

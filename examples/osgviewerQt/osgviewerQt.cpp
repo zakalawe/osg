@@ -1,19 +1,20 @@
 #include <QTimer>
-#include <QApplication>
-#include <QGridLayout>
+#include <QGuiApplication>
 
 #include <osgViewer/CompositeViewer>
 #include <osgViewer/ViewerEventHandlers>
+#include <osgViewer/config/SingleWindow>
 
 #include <osgGA/MultiTouchTrackballManipulator>
 
 #include <osgDB/ReadFile>
 
-#include <osgQt/GraphicsWindowQt>
+#include <osgQt/GraphicsWindowQt5>
 
 #include <iostream>
 
-class ViewerWidget : public QWidget, public osgViewer::CompositeViewer
+#if 0
+class ViewerWindow : public QWidget, public osgViewer::CompositeViewer
 {
 public:
     ViewerWidget(QWidget* parent = 0, Qt::WindowFlags f = 0, osgViewer::ViewerBase::ThreadingModel threadingModel=osgViewer::CompositeViewer::SingleThreaded) : QWidget(parent, f)
@@ -88,6 +89,51 @@ protected:
 
     QTimer _timer;
 };
+#endif
+
+
+
+void setupViewWidget( osgQt::GraphicsWindowQt5* gw, osg::Node* scene )
+{
+    osgViewer::View* view = new osgViewer::View;
+
+    osg::Camera* camera = view->getCamera();
+    camera->setGraphicsContext( gw );
+
+    const osg::GraphicsContext::Traits* traits = gw->getTraits();
+
+    camera->setClearColor( osg::Vec4(0.2, 0.2, 0.6, 1.0) );
+    camera->setViewport( new osg::Viewport(0, 0, traits->width, traits->height) );
+    camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(traits->width)/static_cast<double>(traits->height), 1.0f, 10000.0f );
+
+    view->setSceneData( scene );
+    view->addEventHandler( new osgViewer::StatsHandler );
+    view->setCameraManipulator( new osgGA::MultiTouchTrackballManipulator );
+}
+/*
+osgQt::GraphicsWindowQt5* createGraphicsWindow( int x, int y, int w, int h,
+  const std::string& name="", bool windowDecoration=false )
+{
+    osg::DisplaySettings* ds = osg::DisplaySettings::instance().get();
+    osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
+    traits->windowName = name;
+    traits->windowDecoration = windowDecoration;
+    traits->x = x;
+    traits->y = y;
+    traits->width = w;
+    traits->height = h;
+    traits->doubleBuffer = true;
+    traits->alpha = ds->getMinimumNumAlphaBits();
+    traits->stencil = ds->getMinimumNumStencilBits();
+    traits->sampleBuffers = ds->getMultiSamples();
+    traits->samples = ds->getNumMultiSamples();
+
+    return new osgQt::GraphicsWindowQt5(traits.get());
+}
+*/
+extern "C" {
+  void graphicswindow_Qt5();
+}
 
 int main( int argc, char** argv )
 {
@@ -108,12 +154,32 @@ int main( int argc, char** argv )
 #if QT_VERSION >= 0x040800
     // Required for multithreaded QGLWidget on Linux/X11, see http://blog.qt.io/blog/2011/06/03/threaded-opengl-in-4-8/
     if (threadingModel != osgViewer::ViewerBase::SingleThreaded)
-        QApplication::setAttribute(Qt::AA_X11InitThreads);
+        QGuiApplication::setAttribute(Qt::AA_X11InitThreads);
 #endif
+
+    QGuiApplication app(argc, argv);
+
+    graphicswindow_Qt5();
+
+    osgViewer::Viewer* viewer = new osgViewer::Viewer();
+
+    viewer->apply(new osgViewer::SingleWindow(100,100,1024,768));
+
+    viewer->setSceneData(osgDB::readNodeFile("cow.osgt"));
+
+    osg::Camera* camera = viewer->getCamera();
+
+    camera->setClearColor( osg::Vec4(0.2, 0.2, 0.6, 1.0) );
+//    camera->setViewport( new osg::Viewport(0, 0, traits->width, traits->height) );
+  //  camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(traits->width)/static_cast<double>(traits->height), 1.0f, 10000.0f );
+
+    viewer->addEventHandler( new osgViewer::StatsHandler );
+    viewer->setCameraManipulator( new osgGA::MultiTouchTrackballManipulator );
+
+    osgQt::setViewer(viewer);
     
-    QApplication app(argc, argv);
-    ViewerWidget* viewWidget = new ViewerWidget(0, Qt::Widget, threadingModel);
-    viewWidget->setGeometry( 100, 100, 800, 600 );
-    viewWidget->show();
-    return app.exec();
+//    ViewerWidget* viewWidget = new ViewerWidget(0, Qt::Widget, threadingModel);
+//    viewWidget->setGeometry( 100, 100, 800, 600 );
+//    viewWidget->show();
+    return viewer->run();
 }

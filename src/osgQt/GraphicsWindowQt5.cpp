@@ -16,6 +16,11 @@
 #include <osgViewer/ViewerBase>
 #include <QInputEvent>
 
+#include <QDebug>
+#include <QThread>
+
+#include <QCoreApplication>
+#include <QAbstractEventDispatcher>
 #include <QOpenGLContext>
 #include <QSurfaceFormat>
 
@@ -122,17 +127,18 @@ static QtKeyboardMap s_QtKeyboardMap;
 
 
 /// The object responsible for the scene re-rendering.
-class HeartBeat : public QObject {
+class HeartBeat : public QObject
+{
 public:
-int _timerId;
-osg::Timer _lastFrameStartTime;
-osg::observer_ptr< osgViewer::ViewerBase > _viewer;
+  int _timerId;
+  osg::Timer _lastFrameStartTime;
+  osg::observer_ptr< osgViewer::ViewerBase > _viewer;
 
-HeartBeat();
-virtual ~HeartBeat();
-void init( osgViewer::ViewerBase *viewer );
-void stopTimer();
-void timerEvent( QTimerEvent *event );
+  HeartBeat();
+  virtual ~HeartBeat();
+  void init( osgViewer::ViewerBase *viewer );
+  void stopTimer();
+  void timerEvent( QTimerEvent *event );
 };
 
 static HeartBeat heartBeat;
@@ -286,7 +292,6 @@ void GLWindow::setKeyboardModifiers( QInputEvent* event )
 void GLWindow::resizeEvent( QResizeEvent* event )
 {
     const QSize& size = event->size();
-
     int scaled_width = static_cast<int>(size.width()*_devicePixelRatio);
     int scaled_height = static_cast<int>(size.height()*_devicePixelRatio);
     _gw->resized( x(), y(), scaled_width,  scaled_height);
@@ -486,6 +491,7 @@ GraphicsWindowQt5::GraphicsWindowQt5(osg::GraphicsContext::Traits* traits)
 
 GraphicsWindowQt5::~GraphicsWindowQt5()
 {
+    qDebug() << "Destroying graphics window, ho hum";
     close();
 
     // remove reference from GLWindow
@@ -501,12 +507,12 @@ bool GraphicsWindowQt5::init( Qt::WindowFlags f )
         _window = windowData ? windowData->_window : NULL;
 
     // create widget if it does not exist
-    _ownsWidget = _window == NULL;
+    _ownsWidget = (_window == NULL);
     if ( !_window )
     {
         // WindowFlags
         Qt::WindowFlags flags = f | Qt::Window | Qt::CustomizeWindowHint;
-        if ( _traits->windowDecoration )
+        if ( true || _traits->windowDecoration )
             flags |= Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint | Qt::WindowSystemMenuHint
 #if (QT_VERSION_CHECK(4, 5, 0) <= QT_VERSION)
                 | Qt::WindowCloseButtonHint
@@ -515,8 +521,10 @@ bool GraphicsWindowQt5::init( Qt::WindowFlags f )
 
         // create widget
         _window = new GLWindow();
-        _window->setFlags(f);
+        _window->setFlags(flags);
+        _window->setSurfaceType(QSurface::OpenGLSurface);
         _window->setFormat(traits2qSurfaceFormat(_traits.get()));
+        _window->create();
     }
 
     // set widget name and position
@@ -529,8 +537,9 @@ bool GraphicsWindowQt5::init( Qt::WindowFlags f )
         if ( !_traits->supportsResize ) {
           _window->setMinimumSize( sz );
           _window->setMaximumSize( sz );
+        } else {
+          _window->resize( sz );
         }
-        else _window->resize( sz );
     }
 
     // initialize widget properties
@@ -563,6 +572,7 @@ bool GraphicsWindowQt5::init( Qt::WindowFlags f )
 QSurfaceFormat GraphicsWindowQt5::traits2qSurfaceFormat( const osg::GraphicsContext::Traits* traits )
 {
     QSurfaceFormat format;
+    format.setRenderableType(QSurfaceFormat::OpenGL);
 
     format.setAlphaBufferSize( traits->alpha );
     format.setRedBufferSize( traits->red );
@@ -634,6 +644,7 @@ bool GraphicsWindowQt5::setWindowRectangleImplementation( int x, int y, int widt
     if ( _window == NULL )
         return false;
 
+    qDebug() << "setWRI window geometry to " << x << y << width << height;
     _window->setGeometry( x, y, width, height );
     return true;
 }
@@ -659,6 +670,7 @@ bool GraphicsWindowQt5::setWindowDecorationImplementation( bool windowDecoration
 
     if ( _window )
     {
+        qDebug() << "setWindowDecorationImpl" << windowDecoration << flags;
         _window->setFlags( flags );
 
         return true;
@@ -748,58 +760,22 @@ void GraphicsWindowQt5::setCursor( MouseCursor cursor )
 
 bool GraphicsWindowQt5::valid() const
 {
-    return _window && _context;
+    return _window;
 }
 
 bool GraphicsWindowQt5::realizeImplementation()
 {
-    // save the current context
-    // note: this will save only Qt-based contexts
-    const QOpenGLContext *savedContext = QOpenGLContext::currentContext();
-    QSurface* savedSurface = savedContext ? savedContext->surface() : 0;
+    qDebug() << "realizeImplementation" << "on thread" << QThread::currentThread();
+
+    _window->show();
 
     // initialize GL context for the widget
-    _window->create();
-
-    _context = new QOpenGLContext();
-    _context->setFormat(_window->format());
-    bool result = _context->create();
-    if (!result)
-    {
-      OSG_WARN << "Window realize: Can't create QOpenGLContext'" << std::endl;
-      return false;
-    }
-
-    // make current
-    _realized = true;
-    result = makeCurrent();
-    _realized = false;
-
-    // fail if we do not have current context
-    if ( !result )
-    {
-        if ( savedContext )
-            const_cast< QOpenGLContext* >( savedContext )->makeCurrent(savedSurface);
-
-        OSG_WARN << "Window realize: Can make context current." << std::endl;
-        return false;
-    }
+    // defer this to makeCurrent which happens on the rendering thread
 
     _realized = true;
 
     // make sure the event queue has the correct window rectangle size and input range
     getEventQueue()->syncWindowRectangleWithGraphicsContext();
-
-    // make this window's context not current
-    // note: this must be done as we will probably make the context current from another thread
-    //       and it is not allowed to have one context current in two threads
-    if( !releaseContext() )
-        OSG_WARN << "Window realize: Can not release context." << std::endl;
-
-    // restore previous context
-    if ( savedContext )
-        const_cast< QOpenGLContext* >( savedContext )->makeCurrent(savedSurface);
-
     return true;
 }
 
@@ -835,6 +811,19 @@ bool GraphicsWindowQt5::makeCurrentImplementation()
     if (_window->getNumDeferredEvents() > 0)
         _window->processDeferredEvents();
 
+    if (!_context) {
+      qDebug() << "lazy context creation on thread:" << QThread::currentThread();
+
+      _context = new QOpenGLContext();
+      _context->setFormat(_window->format());
+      bool result = _context->create();
+      if (!result)
+      {
+        OSG_WARN << "GraphicsWindowQt5::makeCurrentImplementation: Can't create QOpenGLContext'" << std::endl;
+        return false;
+      }
+    }
+
     _context->makeCurrent(_window);
 
     return true;
@@ -849,14 +838,6 @@ bool GraphicsWindowQt5::releaseContextImplementation()
 void GraphicsWindowQt5::swapBuffersImplementation()
 {
     _context->swapBuffers(_window);
-
-    // FIXME: the processDeferredEvents should really be executed in a GUI (main) thread context but
-    // I couln't find any reliable way to do this. For now, lets hope non of *GUI thread only operations* will
-    // be executed in a QGLWidget::event handler. On the other hand, calling GUI only operations in the
-    // QGLWidget event handler is an indication of a Qt bug.
-    if (_window->getNumDeferredEvents() > 0)
-        _window->processDeferredEvents();
-
 #if 0
     // We need to call makeCurrent here to restore our previously current context
     // which may be changed by the processDeferredEvents function.
@@ -871,6 +852,13 @@ void GraphicsWindowQt5::requestWarpPointer( float x, float y )
         QCursor::setPos( _window->mapToGlobal(QPoint((int)x,(int)y)) );
 }
 
+bool GraphicsWindowQt5::checkEvents()
+{
+    if (_window->getNumDeferredEvents() > 0)
+      _window->processDeferredEvents();
+    QCoreApplication::processEvents(QEventLoop::AllEvents);
+    return true;
+}
 
 class Qt5WindowingSystem : public osg::GraphicsContext::WindowingSystemInterface
 {
@@ -935,8 +923,13 @@ public:
         else
         {
             osg::ref_ptr< GraphicsWindowQt5 > window = new GraphicsWindowQt5( traits );
-            if (window->valid()) return window.release();
-            else return NULL;
+            if (window->valid()) {
+              return window.release();
+            }
+            else {
+              qDebug() << "window is not valid";
+              return NULL;
+            }
         }
     }
 
@@ -971,6 +964,7 @@ void osgQt::setViewer( osgViewer::ViewerBase *viewer )
 /// Constructor. Must be called from main thread.
 HeartBeat::HeartBeat() : _timerId( 0 )
 {
+  qDebug() << "creating heart-beat";
 }
 
 
@@ -994,6 +988,7 @@ void HeartBeat::stopTimer()
 /// Initializes the loop for viewer. Must be called from main thread.
 void HeartBeat::init( osgViewer::ViewerBase *viewer )
 {
+  qDebug() << "init heartbeat with viewer";
     if( _viewer == viewer )
         return;
 
@@ -1011,17 +1006,21 @@ void HeartBeat::init( osgViewer::ViewerBase *viewer )
 
 void HeartBeat::timerEvent( QTimerEvent */*event*/ )
 {
+  qDebug() << "heart beating";
+
     osg::ref_ptr< osgViewer::ViewerBase > viewer;
     if( !_viewer.lock( viewer ) )
     {
         // viewer has been deleted -> stop timer
         stopTimer();
+        qDebug() << "viewer is gone, stopping";
         return;
     }
 
     // limit the frame rate
     if( viewer->getRunMaxFrameRate() > 0.0)
     {
+      qDebug() << "capping frame rate";
         double dt = _lastFrameStartTime.time_s();
         double minFrameTime = 1.0 / viewer->getRunMaxFrameRate();
         if (dt < minFrameTime)
@@ -1032,6 +1031,7 @@ void HeartBeat::timerEvent( QTimerEvent */*event*/ )
         // avoid excessive CPU loading when no frame is required in ON_DEMAND mode
         if( viewer->getRunFrameScheme() == osgViewer::ViewerBase::ON_DEMAND )
         {
+          qDebug() << "sleeping for on-demand";
             double dt = _lastFrameStartTime.time_s();
             if (dt < 0.01)
                 OpenThreads::Thread::microSleep(static_cast<unsigned int>(1000000.0*(0.01-dt)));
@@ -1050,6 +1050,7 @@ void HeartBeat::timerEvent( QTimerEvent */*event*/ )
         }
         else
         {
+          qDebug() << "requesting a frame";
             viewer->frame();
         }
     }
