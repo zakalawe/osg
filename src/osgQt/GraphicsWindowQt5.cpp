@@ -12,18 +12,20 @@
 */
 
 #include <osg/DeleteHandler>
-#include <osgQt/GraphicsWindowQt>
+#include <osgQt/GraphicsWindowQt5>
 #include <osgViewer/ViewerBase>
 #include <QInputEvent>
 
 #include <QOpenGLContext>
 #include <QSurfaceFormat>
 
+/*
 #if (QT_VERSION>=QT_VERSION_CHECK(4, 6, 0))
 # define USE_GESTURES
 # include <QGestureEvent>
 # include <QGesture>
 #endif
+*/
 
 using namespace osgQt;
 
@@ -281,7 +283,7 @@ void GLWindow::setKeyboardModifiers( QInputEvent* event )
     _gw->getEventQueue()->getCurrentEventState()->setModKeyMask( mask );
 }
 
-void GLWidget::resizeEvent( QResizeEvent* event )
+void GLWindow::resizeEvent( QResizeEvent* event )
 {
     const QSize& size = event->size();
 
@@ -473,10 +475,9 @@ bool GLWindow::gestureEvent( QGestureEvent* qevent )
 
 
 
-GraphicsWindowQt5::GraphicsWindowQt5()
+GraphicsWindowQt5::GraphicsWindowQt5(osg::GraphicsContext::Traits* traits)
 :   _realized(false)
 {
-
     _window = NULL;
     _context = NULL;
     _traits = traits;
@@ -515,7 +516,7 @@ bool GraphicsWindowQt5::init( Qt::WindowFlags f )
         // create widget
         _window = new GLWindow();
         _window->setFlags(f);
-        _window->setSurfaceFormat(traits2qSurfaceFormat(_traits.get()));
+        _window->setFormat(traits2qSurfaceFormat(_traits.get()));
     }
 
     // set widget name and position
@@ -523,14 +524,18 @@ bool GraphicsWindowQt5::init( Qt::WindowFlags f )
     if ( _ownsWidget )
     {
         _window->setTitle( _traits->windowName.c_str() );
-        _window->move( _traits->x, _traits->y );
-        if ( !_traits->supportsResize ) _window->setFixedSize( _traits->width, _traits->height );
-        else _window->resize( _traits->width, _traits->height );
+        _window->setPosition( _traits->x, _traits->y );
+        QSize sz(_traits->width, _traits->height);
+        if ( !_traits->supportsResize ) {
+          _window->setMinimumSize( sz );
+          _window->setMaximumSize( sz );
+        }
+        else _window->resize( sz );
     }
 
     // initialize widget properties
-    _window->setMouseTracking( true );
-    _window->setFocusPolicy( Qt::WheelFocus );
+//    _window->setMouseTracking( true );
+//    _window->setFocusPolicy( Qt::WheelFocus );
     _window->setGraphicsWindow( this );
     useCursor( _traits->useCursor );
 
@@ -565,13 +570,15 @@ QSurfaceFormat GraphicsWindowQt5::traits2qSurfaceFormat( const osg::GraphicsCont
     format.setBlueBufferSize( traits->blue );
     format.setDepthBufferSize( traits->depth );
     format.setStencilBufferSize( traits->stencil );
-    format.setSampleBuffers( traits->sampleBuffers );
+  //  format.setSampleBuffers( traits->sampleBuffers );
     format.setSamples( traits->samples );
 
-    format.setAlpha( traits->alpha>0 );
-    format.setDepth( traits->depth>0 );
-    format.setStencil( traits->stencil>0 );
-    format.setDoubleBuffer( traits->doubleBuffer );
+    format.setAlphaBufferSize( traits->alpha>0 );
+    format.setDepthBufferSize( traits->depth );
+
+    format.setSwapBehavior( traits->doubleBuffer ?
+        QSurfaceFormat::DoubleBuffer :
+        QSurfaceFormat::DefaultSwapBehavior);
     format.setSwapInterval( traits->vsync ? 1 : 0 );
     format.setStereo( traits->quadBufferStereo ? 1 : 0 );
 
@@ -583,15 +590,13 @@ void GraphicsWindowQt5::qSurfaceFormat2traits( const QSurfaceFormat& format, osg
     traits->red = format.redBufferSize();
     traits->green = format.greenBufferSize();
     traits->blue = format.blueBufferSize();
-    traits->alpha = format.alpha() ? format.alphaBufferSize() : 0;
-    traits->depth = format.depth() ? format.depthBufferSize() : 0;
-    traits->stencil = format.stencil() ? format.stencilBufferSize() : 0;
-
-    traits->sampleBuffers = format.sampleBuffers() ? 1 : 0;
+    traits->alpha = format.alphaBufferSize();
+    traits->depth = format.depthBufferSize();
+    traits->stencil = format.stencilBufferSize();
     traits->samples = format.samples();
 
     traits->quadBufferStereo = format.stereo();
-    traits->doubleBuffer = format.doubleBuffer();
+    traits->doubleBuffer = (format.swapBehavior() == QSurfaceFormat::DoubleBuffer);
 
     traits->vsync = format.swapInterval() >= 1;
 }
@@ -626,16 +631,16 @@ osg::GraphicsContext::Traits* GraphicsWindowQt5::createTraits( const QWindow* wi
 
 bool GraphicsWindowQt5::setWindowRectangleImplementation( int x, int y, int width, int height )
 {
-    if ( _widget == NULL )
+    if ( _window == NULL )
         return false;
 
     _window->setGeometry( x, y, width, height );
     return true;
 }
 
-void GraphicsWindowQ5t::getWindowRectangle( int& x, int& y, int& width, int& height )
+void GraphicsWindowQt5::getWindowRectangle( int& x, int& y, int& width, int& height )
 {
-    if ( _widget )
+    if ( _window )
     {
         const QRect& geom = _window->geometry();
         x = geom.x();
@@ -673,7 +678,7 @@ void GraphicsWindowQt5::grabFocus()
         _window->requestActivate();
 }
 
-void GraphicsWindowQt::grabFocusIfPointerInWindow()
+void GraphicsWindowQt5::grabFocusIfPointerInWindow()
 {
   #if 0
     if ( _widget->underMouse() )
@@ -710,7 +715,7 @@ void GraphicsWindowQt5::useCursor( bool cursorOn )
 
 void GraphicsWindowQt5::setCursor( MouseCursor cursor )
 {
-    if ( cursor==InheritCursor && _widget )
+    if ( cursor==InheritCursor && _window )
     {
         _window->unsetCursor();
     }
@@ -751,12 +756,13 @@ bool GraphicsWindowQt5::realizeImplementation()
     // save the current context
     // note: this will save only Qt-based contexts
     const QOpenGLContext *savedContext = QOpenGLContext::currentContext();
+    QSurface* savedSurface = savedContext ? savedContext->surface() : 0;
 
     // initialize GL context for the widget
     _window->create();
 
     _context = new QOpenGLContext();
-    _context->setSurfaceFormat(_window->format());
+    _context->setFormat(_window->format());
     bool result = _context->create();
     if (!result)
     {
@@ -773,7 +779,7 @@ bool GraphicsWindowQt5::realizeImplementation()
     if ( !result )
     {
         if ( savedContext )
-            const_cast< QOpenGLContext* >( savedContext )->makeCurrent();
+            const_cast< QOpenGLContext* >( savedContext )->makeCurrent(savedSurface);
 
         OSG_WARN << "Window realize: Can make context current." << std::endl;
         return false;
@@ -792,7 +798,7 @@ bool GraphicsWindowQt5::realizeImplementation()
 
     // restore previous context
     if ( savedContext )
-        const_cast< QOpenGLGLContext* >( savedContext )->makeCurrent();
+        const_cast< QOpenGLContext* >( savedContext )->makeCurrent(savedSurface);
 
     return true;
 }
@@ -848,8 +854,8 @@ void GraphicsWindowQt5::swapBuffersImplementation()
     // I couln't find any reliable way to do this. For now, lets hope non of *GUI thread only operations* will
     // be executed in a QGLWidget::event handler. On the other hand, calling GUI only operations in the
     // QGLWidget event handler is an indication of a Qt bug.
-    if (_context->getNumDeferredEvents() > 0)
-        _context->processDeferredEvents();
+    if (_window->getNumDeferredEvents() > 0)
+        _window->processDeferredEvents();
 
 #if 0
     // We need to call makeCurrent here to restore our previously current context
@@ -937,8 +943,8 @@ public:
 private:
 
     // No implementation for these
-    Qt5WindowingSystem( const QtWindowingSystem& );
-    Qt5WindowingSystem& operator=( const QtWindowingSystem& );
+    Qt5WindowingSystem( const Qt5WindowingSystem& );
+    Qt5WindowingSystem& operator=( const Qt5WindowingSystem& );
 };
 
 

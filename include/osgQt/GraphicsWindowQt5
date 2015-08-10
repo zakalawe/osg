@@ -111,8 +111,8 @@ protected:
     }
     void processDeferredEvents();
 
-    friend class GraphicsWindowQt;
-    GraphicsWindowQt* _gw;
+    friend class GraphicsWindowQt5;
+    GraphicsWindowQt5* _gw;
 
     QMutex _deferredEventQueueMutex;
     QQueue<QEvent::Type> _deferredEventQueue;
@@ -132,8 +132,8 @@ protected:
 class OSGQT_EXPORT GraphicsWindowQt5 : public osgViewer::GraphicsWindow
 {
 public:
-    GraphicsWindowQt( osg::GraphicsContext::Traits* traits);
-    virtual ~GraphicsWindowQt();
+    GraphicsWindowQt5( osg::GraphicsContext::Traits* traits = 0 );
+    virtual ~GraphicsWindowQt5();
 
     inline GLWindow* getGLWindow() { return _window; }
     inline const GLWindow* getGLWindow() const { return _window; }
@@ -147,7 +147,7 @@ public:
     bool init( Qt::WindowFlags f );
 
     static QSurfaceFormat traits2qSurfaceFormat( const osg::GraphicsContext::Traits* traits );
-    static void qSurgaceFormat2traits( const QSurfaceFormat& format, osg::GraphicsContext::Traits* traits );
+    static void qSurfaceFormat2traits( const QSurfaceFormat& format, osg::GraphicsContext::Traits* traits );
     static osg::GraphicsContext::Traits* createTraits( const QWindow* window );
 
     virtual bool setWindowRectangleImplementation( int x, int y, int width, int height );
@@ -179,7 +179,7 @@ public:
 protected:
 
     friend class GLWindow;
-    GLWindow* _widget;
+    GLWindow* _window;
     QOpenGLContext* _context;
     bool _ownsWidget;
     QCursor _currentCursor;

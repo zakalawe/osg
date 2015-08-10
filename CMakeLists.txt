@@ -722,7 +722,7 @@ IF(OSG_USE_QT AND NOT ANDROID)
 
     ELSE()
 
-        FIND_PACKAGE(Qt5Widgets QUIET)
+        find_package(Qt5 5.2 COMPONENTS Gui)
 
         IF ( Qt5Widgets_FOUND )
             # CMake 2.8.8 or greater required
