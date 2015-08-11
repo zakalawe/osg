@@ -713,7 +713,8 @@ IF(OSG_USE_QT AND NOT ANDROID)
 
     IF  (DESIRED_QT_VERSION)
         IF  (DESIRED_QT_VERSION MATCHES 5)
-            FIND_PACKAGE(Qt5Widgets)
+            #FIND_PACKAGE(Qt5Widgets)
+            find_package(Qt5 5.2 COMPONENTS Gui)
         ELSEIF (DESIRED_QT_VERSION MATCHES 4)
             FIND_PACKAGE(Qt4)
         ELSE()
@@ -724,7 +725,7 @@ IF(OSG_USE_QT AND NOT ANDROID)
 
         find_package(Qt5 5.2 COMPONENTS Gui)
 
-        IF ( Qt5Widgets_FOUND )
+        IF ( Qt5Gui_FOUND )
             # CMake 2.8.8 or greater required
             BUILDER_VERSION_GREATER(2 8 7)
             IF(NOT VALID_BUILDER_VERSION)
@@ -737,7 +738,7 @@ IF(OSG_USE_QT AND NOT ANDROID)
             ENDIF( )
         ENDIF( )
 
-        IF ( NOT Qt5Widgets_FOUND )
+        IF ( NOT Qt5Gui_FOUND )
             FIND_PACKAGE(Qt4)
 
             IF (NOT QT4_FOUND)
@@ -747,7 +748,7 @@ IF(OSG_USE_QT AND NOT ANDROID)
     ENDIF()
 
     #If we have found Qt5, let's try to top off by getting the webkit as well
-    IF ( Qt5Widgets_FOUND )
+    IF ( Qt5Gui_FOUND )
         FIND_PACKAGE(Qt5WebKitWidgets QUIET)
 
         IF(COMMAND cmake_policy)
@@ -1271,7 +1272,7 @@ SET(PKGCONFIG_FILES
   openscenegraph-osgVolume
 )
 
-IF(QT4_FOUND OR Qt5Widgets_FOUND )
+IF(QT4_FOUND OR Qt5Gui_FOUND )
   SET(PKGCONFIG_FILES ${PKGCONFIG_FILES} openscenegraph-osgQt)
 ENDIF()
 
