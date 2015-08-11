@@ -974,7 +974,7 @@ IF(APPLE AND NOT ANDROID)
                 # 64 Bit Works, i386,ppc is not supported any more
                 SET(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architectures for OSX" FORCE)
 
-				set(CMAKE_OSX_RPATH 1)
+				        set(CMAKE_OSX_RPATH 1)
 
                 #### FlightGear change - don't explicity set -mmacosx-version-min here, we want to use the value defined by
                 # CMAKE_OSX_DEPLOYMENT_TARGET above
@@ -1219,4 +1219,3 @@ IF(ANDROID)
     configure_file("${OSG_ANDROID_TEMPLATES}/Application.mk.master.in" "${CMAKE_BINARY_DIR}/Application.mk")
     configure_file("${OSG_ANDROID_TEMPLATES}/AndroidManifest.xml.master.in" "${CMAKE_BINARY_DIR}/AndroidManifest.xml")
 ENDIF(ANDROID)
-
