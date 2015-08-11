@@ -498,6 +498,9 @@ void GraphicsContext::clear()
 
     if (_clearMask==0 || !_traits) return;
 
+    OSG_INFO << "GC::clear: w="<< _traits->width << ",h="<< _traits->height << std::endl;
+
+
     glViewport(0, 0, _traits->width, _traits->height);
     glScissor(0, 0, _traits->width, _traits->height);
 
@@ -868,10 +871,16 @@ void GraphicsContext::resizedImplementation(int x, int y, int width, int height)
 
     if (!_traits) return;
 
+    OSG_INFO << "resized to " << width << " x " << height << std::endl;
+    OSG_INFO << "\ttraits:" << _traits->width << " x " << _traits->height << std::endl;
+
     double widthChangeRatio = double(width) / double(_traits->width);
     double heigtChangeRatio = double(height) / double(_traits->height);
     double aspectRatioChange = widthChangeRatio / heigtChangeRatio;
 
+    OSG_INFO << "widthChangeRatio:" << widthChangeRatio << "\n"
+      << "heightChangeRatio:" << heigtChangeRatio << "\n"
+      << "aspectChangeRatio:" << aspectRatioChange << std::endl;
 
     for(Cameras::iterator itr = _cameras.begin();
         itr != _cameras.end();
@@ -893,6 +902,7 @@ void GraphicsContext::resizedImplementation(int x, int y, int width, int height)
                 if (viewport->x()==0 && viewport->y()==0 &&
                     viewport->width()>=_traits->width && viewport->height()>=_traits->height)
                 {
+                  OSG_INFO << "\treseting viewport to: " << width << " x " << height << std::endl;
                     viewport->setViewport(0,0,width,height);
                 }
                 else
