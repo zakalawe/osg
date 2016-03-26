@@ -79,6 +79,10 @@ State::State():
     {
         _checkGLErrors = ONCE_PER_ATTRIBUTE;
     }
+    else if(str && (strcmp(str, "OFF") == 0 || strcmp(str, "off") == 0))
+    {
+        _checkGLErrors = NEVER_CHECK_GL_ERRORS;
+    }
 
     _currentActiveTextureUnit=0;
     _currentClientActiveTextureUnit=0;
@@ -1859,16 +1863,16 @@ std::string State::getDefineString(const osg::ShaderDefines& shaderDefines)
             const StateSet::DefinePair& dp = cd_itr->second;
             shaderDefineStr += "#define ";
             shaderDefineStr += cd_itr->first;
-            if (dp.first.empty())
-            {
-                shaderDefineStr += "\n";
-            }
-            else
+            if (!dp.first.empty())
             {
                 shaderDefineStr += " ";
                 shaderDefineStr += dp.first;
-                shaderDefineStr += "\n";
             }
+#ifdef WIN32
+            shaderDefineStr += "\r\n";
+#else
+            shaderDefineStr += "\n";
+#endif
 
             ++sd_itr;
             ++cd_itr;
