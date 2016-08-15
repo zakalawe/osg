@@ -67,16 +67,18 @@ SET(OPENSCENEGRAPH_RELEASE_CANDIDATE 0)
 SET(OPENSCENEGRAPH_VERSION ${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINOR_VERSION}.${OPENSCENEGRAPH_PATCH_VERSION})
 
 #### FlightGear change - remove the version suffix from OSG_PLUGINS, since
-# codesigning cannot tolerate periods in subdirs of Contents/PlugIns
-# osgDB Registry code modified to match.
-#SET(OSG_PLUGINS osgPlugins-${OPENSCENEGRAPH_VERSION})
-SET(OSG_PLUGINS osgPlugins)
+IF (APPLE)
+  # codesigning cannot tolerate periods in subdirs of Contents/PlugIns
+  # osgDB Registry code modified to match.
+  #SET(OSG_PLUGINS osgPlugins-${OPENSCENEGRAPH_VERSION})
+  SET(OSG_PLUGINS osgPlugins)
 
-# codesigning doesn't like '.so' suffix
-set(CMAKE_SHARED_MODULE_SUFFIX ".dylib")
-set(CMAKE_SHARED_MODULE_SUFFIX_CXX ".dylib")
+  # codesigning doesn't like '.so' suffix
+  set(CMAKE_SHARED_MODULE_SUFFIX ".dylib")
+  set(CMAKE_SHARED_MODULE_SUFFIX_CXX ".dylib")
 
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
+ENDIF()
 ######################################################################
 
 SET(OSG_PLUGIN_PREFIX "")
