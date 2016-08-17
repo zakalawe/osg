@@ -78,6 +78,8 @@ IF (APPLE)
   set(CMAKE_SHARED_MODULE_SUFFIX_CXX ".dylib")
 
   set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
+ELSE()
+  SET(OSG_PLUGINS osgPlugins-${OPENSCENEGRAPH_VERSION})
 ENDIF()
 ######################################################################
 
