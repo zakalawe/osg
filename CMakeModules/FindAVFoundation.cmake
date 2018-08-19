@@ -29,10 +29,8 @@ ELSE()
   IF(APPLE)
       # AVFoundation exists since 10.7, but only 10.8 has all features necessary for OSG
       # so check the SDK-setting
-
-      IF(${OSG_OSX_SDK_NAME} STREQUAL "macosx10.8" OR ${OSG_OSX_SDK_NAME} STREQUAL "macosx10.9" OR ${OSG_OSX_SDK_NAME} STREQUAL "macosx10.10" OR ${OSG_OSX_SDK_NAME} STREQUAL "macosx10.11")
-          # nothing special here ;-)
-      ELSE()
+      STRING(SUBSTRING ${OSG_OSX_SDK_NAME} 6 -1 SDK_VERSION)
+      IF(${SDK_VERSION} VERSION_LESS "10.8")
           MESSAGE("AVFoundation disabled for SDK < 10.8")
           SET(AV_FOUNDATION_FOUND "NO")
       ENDIF()
