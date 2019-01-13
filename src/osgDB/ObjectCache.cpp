@@ -93,10 +93,13 @@ void ObjectCache::updateTimeStampOfObjectsInCacheWithExternalReferences(double r
 
 void ObjectCache::removeExpiredObjectsInCache(double expiryTime)
 {
-    OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_objectCacheMutex);
-
+    static int locked_frame_count = 0;
     if (!Registry::instance()->getObjectCacheExpiryMutex()->writeTryLock())
     {
+        if (locked_frame_count > 0)
+            OSG_NOTICE << "ObjectCache::removeExpiredObjectsInCache - resuming expiry after lockout for " << locked_frame_count << " frames" << std::endl;
+        locked_frame_count = 0;
+
         // Remove expired entries from object cache
         ObjectCacheMap::iterator oitr = _objectCache.begin();
         while (oitr != _objectCache.end())
@@ -115,6 +118,15 @@ void ObjectCache::removeExpiredObjectsInCache(double expiryTime)
             }
         }
         Registry::instance()->getObjectCacheExpiryMutex()->writeUnlock();
+    }
+    else
+    {
+        locked_frame_count++;
+        if (locked_frame_count > 1000)
+        {
+            OSG_WARN << "ObjectCache::removeExpiredObjectsInCache - cache expiry still locked out after 1000 attempts" << std::endl;
+            locked_frame_count = 0;
+        }
     }
 }
 
