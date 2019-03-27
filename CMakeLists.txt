@@ -39,6 +39,11 @@ if(COMMAND cmake_policy)
    endif()
 endif()
 
+#### FlightGear change ###############################################
+# using 10.9 for consistency with SimGear & FlightGear
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
+######################################################################
+
 PROJECT(OpenSceneGraph)
 
 SET(OPENSCENEGRAPH_MAJOR_VERSION 3)
@@ -64,9 +69,6 @@ IF (APPLE)
   set(CMAKE_SHARED_MODULE_SUFFIX ".dylib")
   set(CMAKE_SHARED_MODULE_SUFFIX_CXX ".dylib")
 
-  # our deployment target is 10.7 for the moment (consistent with
-  # CmakeLists for SimGear and FlightGear)
-  set(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
 ELSE()
   SET(OSG_PLUGINS osgPlugins-${OPENSCENEGRAPH_VERSION})
 ENDIF()
