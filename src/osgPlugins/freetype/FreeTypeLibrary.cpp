@@ -14,6 +14,7 @@
 #include "FreeTypeLibrary.h"
 #include <osg/Notify>
 //#include <ft2build.h>
+#include <osgDB/fstream>
 
 //#define PRINT_OUT_FONT_DETAILS
 #ifdef PRINT_OUT_FONT_DETAILS
@@ -60,6 +61,9 @@ FreeTypeLibrary* FreeTypeLibrary::instance()
 
 bool FreeTypeLibrary::getFace(const std::string& fontfile,unsigned int index, FT_Face & face)
 {
+    osgDB::ifstream stream(fontfile.c_str(), std::ios::in | std::ios::binary);
+    return getFace(stream, index, face);
+
     OpenThreads::ScopedLock<OpenThreads::Mutex> lock(getMutex());
 
     FT_Error error = FT_New_Face( _ftlibrary, fontfile.c_str(), index, &face );
