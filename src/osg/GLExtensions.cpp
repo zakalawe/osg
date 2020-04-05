@@ -883,6 +883,10 @@ GLExtensions::GLExtensions(unsigned int contextID)
         else isTextureStorageEnabled = true;
     }
 
+// FlightGear modification : check the GL version as well
+#if defined(__APPLE__)
+    isTextureStorageEnabled = isTextureStorageEnabled && (glVersion >= 4.0f);
+#endif
 
     // Texture3D extensions
     isTexture3DFast = OSG_GL3_FEATURES || isGLExtensionSupported(contextID,"GL_EXT_texture3D");
