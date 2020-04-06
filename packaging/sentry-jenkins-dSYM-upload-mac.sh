@@ -27,6 +27,8 @@ do
     dsymutil -o $symPath $libPath
 done
 
+dsymutil -o $DWARF_DSYM_FOLDER_PATH/libOpenThreads.dSYM $WORKSPACE/dist/lib/libOpenThreads${suffix}.dylib
+
 if which sentry-cli >/dev/null; then
     export SENTRY_ORG=flightgear
     export SENTRY_PROJECT=flightgear
