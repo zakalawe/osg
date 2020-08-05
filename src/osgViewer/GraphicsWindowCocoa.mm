@@ -30,6 +30,7 @@ static bool s_quit_requested = false;
 @end
 #endif
 
+// #define DISABLE_HIDPI
 
 // ----------------------------------------------------------------------------------------------------------
 // small helper class remapping key-codes
@@ -161,6 +162,42 @@ std::ostream& operator<<(std::ostream& os, const NSRect& rect)
 {
     os << rect.origin.x << "/" << rect.origin.y << " " << rect.size.width << "x" << rect.size.height;
     return os;
+}
+
+// ----------------------------------------------------------------------------------------------------------
+// Retina screens have a higher resolution in the OpenGL surface, with every pixel actually represented as
+// a 2x2 pixel grid.
+//
+// these 2 methods convert the bounds appropriately by first querying the scaling factor and then applying
+// the transformation
+// ----------------------------------------------------------------------------------------------------------
+
+static NSRect convertFromHiDPI(GraphicsWindowCocoaWindow* nswin, const NSRect& bounds)
+{
+    CGFloat devicePixelRatio = 1.0;
+    NSScreen* nsscreen = [nswin screen];
+
+    if (nsscreen != nil) {
+        devicePixelRatio = [nsscreen backingScaleFactor];
+    }
+
+    NSRect converted = NSMakeRect(bounds.origin.x, bounds.origin.y, bounds.size.width / devicePixelRatio, bounds.size.height / devicePixelRatio);
+
+    return converted;
+}
+
+static NSRect convertToHiDPI(GraphicsWindowCocoaWindow* nswin, const NSRect& bounds)
+{
+    CGFloat devicePixelRatio = 1.0;
+    NSScreen* nsscreen = [nswin screen];
+
+    if (nsscreen != nil) {
+        devicePixelRatio = [nsscreen backingScaleFactor];
+    }
+
+    NSRect converted = NSMakeRect(bounds.origin.x, bounds.origin.y, bounds.size.width * devicePixelRatio, bounds.size.height * devicePixelRatio);
+
+    return converted;
 }
 
 // ----------------------------------------------------------------------------------------------------------
@@ -1024,6 +1061,11 @@ static NSRect convertToQuartzCoordinates(const NSRect& rect)
     // convert to quartz-coordinate-system
     bounds = convertToQuartzCoordinates(bounds);
 
+    #ifndef DISABLE_HIDPI
+        // Adjust for HiDPI
+        bounds = convertToHiDPI(nswin, bounds);
+    #endif
+
     // std::cout << "windowdidmove: " << bounds.origin.x << " " << bounds.origin.y << " " << bounds.size.width << " " << bounds.size.height << std::endl;
 
     _win->adaptResize(bounds.origin.x, bounds.origin.y, bounds.size.width, bounds.size.height);
@@ -1062,6 +1104,11 @@ public:
     {
         NSRect nsrect = [_win->getWindow() frame];
         nsrect = convertToQuartzCoordinates(nsrect);
+
+        #ifndef DISABLE_HIDPI
+            // Adjust for HiDPI
+            nsrect = convertToHiDPI(_win->getWindow(), nsrect);
+        #endif
 
         rect.origin.x = nsrect.origin.x;
         rect.origin.y = nsrect.origin.y;
@@ -1171,6 +1218,12 @@ bool GraphicsWindowCocoa::realizeImplementation()
         }
 
         rect = convertFromQuartzCoordinates(rect);
+
+        #ifndef DISABLE_HIDPI
+            // Adjust for HiDPI
+            rect = convertFromHiDPI(_window, rect);
+        #endif
+
         [_window setFrameOrigin: rect.origin];
     }
 
@@ -1231,8 +1284,11 @@ bool GraphicsWindowCocoa::realizeImplementation()
     [_view setAutoresizingMask:  (NSViewWidthSizable | NSViewHeightSizable) ];
     [_view setGraphicsWindowCocoa: this];
     [_view setOpenGLContext:_context];
-    [_view setWantsBestResolutionOpenGLSurface:NO];
-    
+
+    #ifdef DISABLE_HIDPI
+        [_view setWantsBestResolutionOpenGLSurface: NO];
+    #endif
+
     // enable multitouch
     if (_multiTouchEnabled || (windowData && windowData->isMultiTouchEnabled()))
     {
@@ -1488,6 +1544,11 @@ bool GraphicsWindowCocoa::setWindowRectangleImplementation(int x, int y, int wid
 
     NSRect rect = NSMakeRect(x+screenLeft,y+screenTop,width, height);
     rect = convertFromQuartzCoordinates(rect);
+
+    #ifndef DISABLE_HIDPI
+        // Adjust for HiDPI
+        rect = convertFromHiDPI(_window, rect);
+    #endif
 
     [_window setFrame: [NSWindow frameRectForContentRect: rect styleMask: [_window styleMask]] display: YES];
     [_context update];
