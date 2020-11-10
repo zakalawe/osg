@@ -22,7 +22,7 @@ FOREACH( mylibfolder
    #     osgPresentation
    #     osgShadow
         osgSim
-    #    osgTerrain
+        osgTerrain
 #        osgWidget
 #        osgUI
      #   osgVolume
