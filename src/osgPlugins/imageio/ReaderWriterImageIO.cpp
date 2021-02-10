@@ -380,6 +380,11 @@ osg::Image* CreateOSGImageFromCGImage(CGImageRef image_ref)
 //	CGBitmapInfo		src_bitmap_info			= CGImageGetBitmapInfo(image_ref);
 
 	CFDataRef rawData = CGDataProviderCopyData(CGImageGetDataProvider(image_ref));
+    if (!rawData) {
+        // Sentry-Id: FLIGHTGEAR-1V
+        return nullptr;
+    }
+
 	const UInt8* src_data = CFDataGetBytePtr(rawData);
 
 	size_t channels = src_bits_per_pixel/src_bits_per_component;
